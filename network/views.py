@@ -28,7 +28,7 @@ def login_view(request):
         # Check if authentication successful
         if user is not None:
             login(request, user)
-            return HttpResponseRedirect(reverse("index"))
+            return HttpResponseRedirect("/")
         else:
             return render(request, "network/login.html", {
                 "message": "Invalid username and/or password."
@@ -37,9 +37,31 @@ def login_view(request):
         return render(request, "network/login.html")
 
 
+def api_login(request):
+    if request.method == "POST":
+
+        data = json.loads(request.body)
+        # Attempt to sign user in
+        username = data.get("username")
+        password = data.get("password")
+        user = authenticate(request, username=username, password=password)
+
+        # Check if authentication successful
+        if user is not None:
+            login(request, user)
+            return JsonResponse({"message":"Login successful as %s" % username}, status=200)
+        else:
+            return JsonResponse({"message":"Invalid username and/or password"}, status=400)
+    else:
+        return JsonResponse({"message":"Invalid route"}, status=404)
+
+def api_logout(request):
+    logout(request)
+    return JsonResponse({"message":"Logout successfuly"}, status=200)
+
 def logout_view(request):
     logout(request)
-    return HttpResponseRedirect(reverse("index"))
+    return HttpResponseRedirect("/")
 
 
 def register(request):
@@ -64,7 +86,7 @@ def register(request):
                 "message": "Username already taken."
             })
         login(request, user)
-        return HttpResponseRedirect(reverse("index"))
+        return HttpResponseRedirect("/")
     else:
         return render(request, "network/register.html")
 
@@ -134,17 +156,41 @@ def comment_view(request):
     post_id = data.get("post_id")
     if comment and post_id and user:
         comment = Comment.objects.create(user=user, comment=comment, post_id=post_id)
-        return JsonResponse({"message":comment.serialize()}, status=201)
+        return JsonResponse({"message":"Created successfully", "comment":comment.serialize()}, status=201)
     return JsonResponse({"message":"Error"}, status=400)
 
 
 @csrf_exempt
 @login_required
 def follow_view(request):
-    return JsonResponse()
+    if request.method == "POST" and request.user.is_authenticated:
+        data = json.loads(request.body)
+        user_id = data.get("user")
+        follow = data.get("follow")
+        if user_id is not None and follow is not None:
+            user_id = int(user_id)
+            follow = bool(follow)
+            user:User = request.user
+            if follow:
+                user.following.add(user_id)
+            else:
+                user.following.remove(user_id)
+            user.save()
+            return JsonResponse({"message":"Success"}, status=200)
+        return JsonResponse({"message":"Missing user_id or follow"}, status=400)
+    return JsonResponse({"message":"error"}, status=400)
 
 
 @csrf_exempt
 @login_required
 def user_view(request):
-    return JsonResponse(request.user.serialize())
+    username = request.GET.get("username")
+    if username:
+        user :User = User.objects.get(username=username)
+        data = {}
+        data["user"] = user.serialize()
+        data["posts"] = [post.serialize() for post in user.posts.all().order_by("-created_at")]
+        return JsonResponse(data)
+
+    return JsonResponse({"user":request.user.serialize()})
+

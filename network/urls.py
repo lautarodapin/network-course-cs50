@@ -1,21 +1,24 @@
 
-from django.urls import path
+from django.urls import path, re_path
 
 from . import views
 
 urlpatterns = [
-    path("", views.index, name="index"),
-    path("following/", views.index, name="following"),
+    # path("", views.index, name="index"),
+    path("api/following/", views.index, name="following"),
 
-    path("login", views.login_view, name="login"),
-    path("logout", views.logout_view, name="logout"),
-    path("register", views.register, name="register"),
+    path("api/logout/", views.api_logout),
+    path("accounts/login/", views.login_view, name="login"),
+    path("accounts/logout/", views.logout_view, name="logout"),
+    path("accounts/register/", views.register, name="register"),
 
-    path("posts/", views.post_view, name="post-list"),
+    path("api/posts/", views.post_view, name="post-list"),
 
-    path("comment/", views.comment_view, name="comment"),
+    path("api/comment/", views.comment_view, name="comment"),
 
-    path("follow/", views.follow_view, name="follow"),
+    path("api/follow/", views.follow_view, name="follow"),
 
-    path("user/", views.user_view, name="user"),
+    path("api/user/", views.user_view, name="user"),
+
+    re_path(r'^(?:.*)/?$', views.index, name="index"),
 ]

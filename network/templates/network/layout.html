@@ -8,7 +8,7 @@
         <link href="{% static 'network/styles.css' %}" rel="stylesheet">
         <script crossorigin src="https://unpkg.com/react@17/umd/react.development.js"></script>
         <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
-    <script src='https://unpkg.com/react-router-dom@5.0.0/umd/react-router-dom.min.js'></script>
+        <script src='https://unpkg.com/react-router-dom@5.0.0/umd/react-router-dom.min.js'></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.js"></script>
 
         <script>
@@ -16,6 +16,7 @@
             window.path = "{{ request.get_full_path }}";
             window.is_authenticated = {{user.is_authenticated|yesno:"true,false"}};
             window.logout = "{% url 'logout' %}";
+            window.index = "{% url 'index' %}";
             window.login = "{% url 'login' %}";
             window.register = "{% url 'register' %}";
         </script>
