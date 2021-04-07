@@ -3,6 +3,7 @@ const Route = ReactRouterDOM.Route;
 const Router = ReactRouterDOM.BrowserRouter
 const Component = React.Component;
 const Switch = ReactRouterDOM.Switch;
+const Redirect = ReactRouterDOM.Redirect;
 
 
 class Avatar extends Component {
@@ -23,6 +24,9 @@ class Paginator extends Component {
         };
     }
     render() {
+        const before_pages = this.props.paginator.current - 1
+        const after_pages = this.props.paginator.num_pages - this.props.paginator.current
+        const offset = this.props.paginator.current 
         return (
             <nav aria-label="Page navigation example">
                 <ul className="pagination">
@@ -40,7 +44,7 @@ class Paginator extends Component {
                             <span className="sr-only">(current)</span>
                         </a>
                     </li>
-                    {/* {this.renderNexts()} */}
+                    {this.renderNexts(after_pages, offset)}
                     {this.props.paginator.has_next ? (
                         <li className="page-item">
                             <a className="page-link" onClick={(e) => this.state.handler(this.props.paginator.current + 1)}>
@@ -64,19 +68,67 @@ class Paginator extends Component {
                         </a>
                     </li>
                 ) : "");
-    };
+            };
+    renderNexts = (pages, offset) => {
+        return Array.from({length: pages}, (e, i) => i + offset + 1).map(el => 
+            (
+                <li key={el} className="page-item">
+                    <a 
+                        className="page-link"
+                        onClick={(e) => this.state.handler(el)}
+                    >
+                        {el}
+                    </a>
+                </li>
+            )
+        )
+    }
     // todo improve
-    renderNexts = () => this.props.paginator.num_pages == undefined ? "" : Array(this.props.paginator.num_pages - this.props.paginator.current).fill(1).map((el, i) =>
-    (
-        <li className="page-item">
-            <a
-                onClick={(e) => this.state.handler(i + 1)}
-                className="page-link">
-                {i + 1}
-            </a>
-        </li>
-    )
-    )
+    // renderNexts = () => this.props.paginator.num_pages == undefined ? "" : Array(this.props.paginator.num_pages - this.props.paginator.current).fill(1).map((el, i) =>
+    //     (
+    //         <li className="page-item">
+    //             <a
+    //                 onClick={(e) => this.state.handler(i + 1)}
+    //                 className="page-link">
+    //                 {i + 1}
+    //             </a>
+    //         </li>
+    //     )
+    // )
+}
+
+const NewPostForm = (props) => {
+    const handler = props.handler;
+    const [content, setContent] = React.useState("")
+    const submitPost = (e)=>{
+        e.preventDefault();
+        fetch('api/posts/', {
+            method:"POST",
+            body:JSON.stringify({
+                content:content,
+            }),
+        }).then(r=>r.json()).then(data=>{
+            console.log(data)
+            handler(data.post);
+            setContent(old=>"");
+        });
+        };
+
+    return (
+        <React.Fragment>
+                 <form className="m-5" onSubmit={e=>submitPost(e)}>
+                     <textarea 
+                        value={content}
+                        onChange={e=>setContent(old=>e.target.value)}
+                         rows="2" 
+                         className="form-control"
+                         placeholder="Waaazaaap"
+                         required
+                     />
+                     <button className="btn btn-sm btn-primary m-2">Post!</button>
+                 </form>
+        </React.Fragment>
+    );
 }
 
 // class NewPostForm extends React.Component {
@@ -142,11 +194,11 @@ class NavBar extends React.Component {
                             </li>) : ""}
                         {is_authenticated ? (
                             <li className="nav-item">
-                                <Link className="nav-link" to={logout}>Log Out</Link>
+                                <Link className="nav-link" /*to={logout}*/ onClick={this.logout}>Log Out</Link>
                             </li>) : ""}
                         {!is_authenticated ? (
                             <li className="nav-item">
-                                <Link className="nav-link" to={login}>Log In</Link>
+                                <Link className="nav-link" /*to={login}*/ to="/login">Log In</Link>
                             </li>) : ""}
                         {!is_authenticated ? (
                             <li className="nav-item">
@@ -157,6 +209,13 @@ class NavBar extends React.Component {
             </nav>
         )
     }
+    logout = (e) => fetch(`/api/logout/`).then(r=>{
+        if (r.ok){ // TODO REFRESH
+            location.reload();
+        }
+        return r.json()
+    })
+    ;
     goAllPosts = () => this.state.handler("all_posts");
     goFollowing = () => this.state.handler("following");
     goProfile = () => this.state.handler("profile");
@@ -308,6 +367,7 @@ class AllPostPage extends Component {
         return (
             <div className="container">
                 <h2 className="m-3">All posts</h2>
+                <NewPostForm  handler={this.newPostHandler}/>
                 {this.state.posts.map((post) => (
                     <Post key={post.id} post={post} current_user={this.state.user} />
                 ))}
@@ -315,6 +375,7 @@ class AllPostPage extends Component {
             </div>
         );
     }
+    newPostHandler = (post)=>this.setState(old =>{posts:[post, ...old.posts]});
     paginationHandler = (page) => fetch(`/api/posts/?page=${page}`)
         .then(r => r.json())
         .then(data => this.setState({ posts: data.posts, paginator: data.paginator }));
@@ -405,12 +466,41 @@ class ProfilePage extends Component {
 class LoginPage extends Component {
     constructor(props){
         super(props);
+        this.state = {
+            username:"",
+            password:"",
+        };
     }
     render(){
         return (
-            div.
+            <div className="container">
+                <h3>Login</h3>
+                <form onSubmit={(e)=>this.submitHandler(e)}>
+                    <div className="form-group">
+                        <label htmlFor="id_username">Username</label>
+                        <input id="id_username" autoComplete="username" className="form-control" type="text" value={this.state.username} onChange={(e)=>{this.setState({username:e.target.value})}}/>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="id_password" >Password</label>
+                        <input id="id_password" autoComplete="current-password" className="form-control" value={this.state.password} onChange={(e)=>{this.setState({password:e.target.value})}} type="password"/>
+                    </div>
+                    <input className="btn btn-lg btn-dark" value="Submit" type="submit"/>
+            </form>
+            </div>
         );
     }
+
+    submitHandler = (e)=>{
+        e.preventDefault();
+        fetch(`api/login/`, {method:"POST", body:JSON.stringify({username:this.state.username, password:this.state.password})})
+        .then(r=>{
+            if (r.ok){
+                this.props.history.push("/");
+                location.reload();
+            }
+    });
+        // .then(r=>r.ok?<Redirect to="/"/>:"");
+    };
 }
 
 class App extends Component {
@@ -423,13 +513,14 @@ class App extends Component {
     render() {
         return (
             <Router>
-                <NavBar />
+                <NavBar {...this.props} />
                 <Switch>
                     <Route exact path="/">
                         <AllPostPage />
                     </Route>
                     <Route exact path="/profile/:username" render={(props) => <ProfilePage {...props} current_user={this.state.current_user} />} />
                     <Route exact path="/following" render={(props) => <FollowingPage {...props} current_user={this.state.current_user} />} />
+                    <Route exact path="/login" render={(props) => <LoginPage {...props} />} />
                 </Switch>
             </Router>
         )

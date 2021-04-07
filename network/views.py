@@ -36,7 +36,7 @@ def login_view(request):
     else:
         return render(request, "network/login.html")
 
-
+@csrf_exempt
 def api_login(request):
     if request.method == "POST":
 
@@ -93,6 +93,8 @@ def register(request):
 
 @csrf_exempt
 def post_view(request, pk=None):
+    print(request.GET)
+    print(request.POST)
     PAGINATION = 1
     posts : QuerySet[Post] = Post.objects.all().order_by("-created_at")
     following = request.GET.get("following")
@@ -126,6 +128,8 @@ def post_view(request, pk=None):
             return JsonResponse({"message":"No attributes"}, status=400)
         return JsonResponse({"message":"Post not found"}, status=400)
     elif request.method == "POST" and request.user.is_authenticated:
+        print("POST!!")
+        print(request.POST)
         data = json.loads(request.body)
         content = data.get("content")
         post = Post.objects.create(content=content, user=request.user)
