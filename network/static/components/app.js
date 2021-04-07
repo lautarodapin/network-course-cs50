@@ -291,6 +291,7 @@ class Post extends Component {
             edit: false,
             comments: props.post.comments,
             enable_comment: false,
+            current_user: props.current_user,
         }
     }
     render() {
@@ -302,19 +303,23 @@ class Post extends Component {
                             <div className="mr-auto">
                                 <Avatar user={this.state.user} />
                             </div>
-                            <div className="ml-4">
-                                <button className="ml-2 btn btn-sm btn-success" onClick={(e) => this.likeHandler(1)}>+1</button>
-                                <button className="ml-2 btn btn-sm btn-danger" onClick={(e) => this.likeHandler(-1)}>-1</button>
-                                <button className="ml-2 btn btn-sm btn-secondary" disabled>{this.state.likes}</button>
+                            {
+                                this.state.current_user && (
+                                <div className="ml-4">
+                                    <button className="ml-2 btn btn-sm btn-success" onClick={(e) => this.likeHandler(1)}>+1</button>
+                                    <button className="ml-2 btn btn-sm btn-danger" onClick={(e) => this.likeHandler(-1)}>-1</button>
+                                    <button className="ml-2 btn btn-sm btn-secondary" disabled>{this.state.likes}</button>
 
-                                {
-                                    this.props.current_user != null && this.state.user.username == this.props.current_user.username ?
-                                        <button className="ml-2 btn btn-sm btn-secondary" onClick={(e) => this.setState({ edit: !this.state.edit })}>
-                                            {this.state.edit ? "Cancel" : "Edit"}
-                                        </button>
-                                        : ""
-                                }
-                            </div>
+                                    {
+                                        this.props.current_user != null && this.state.user.username == this.props.current_user.username ?
+                                            <button className="ml-2 btn btn-sm btn-secondary" onClick={(e) => this.setState({ edit: !this.state.edit })}>
+                                                {this.state.edit ? "Cancel" : "Edit"}
+                                            </button>
+                                            : ""
+                                    }
+                                </div>
+                                )
+                            }
                             <div className="ml-2">
                                 <small className="text-muted">
                                     {this.state.humanize_created_at}
@@ -336,8 +341,8 @@ class Post extends Component {
                                 </div>
                             )}
                         <CommentList comments={this.state.comments} />
-                        {this.state.enable_comment ? <CommentForm handler={this.commentHandler} /> : ""}
-                        <button onClick={(e) => this.setState({ enable_comment: !this.state.enable_comment })} className="btn btn-sm btn-dark">{this.state.enable_comment ? "Cancel" : "Comment"}</button>
+                        {this.state.current_user && <CommentForm handler={this.commentHandler} />}
+                        {/* {this.state.current_user && <button onClick={(e) => this.setState({ enable_comment: !this.state.enable_comment })} className="btn btn-sm btn-dark">Comment</button>} */}
                     </div>
                 </div>
                 <hr />
@@ -434,6 +439,7 @@ class ProfilePage extends Component {
             following: [],
             followers: [],
             posts: null,
+            paginator: {},
         };
         this.fetchUser();
     }
@@ -444,9 +450,9 @@ class ProfilePage extends Component {
                 <h2>{capFirst(this.props.match.params.username)}'s profile <small>following {this.state.following.length} people/s and {this.state.followers.length} followers</small></h2>
                 {this.renderFollow()}
                 {this.state.posts && this.state.posts.map(post => (
-                    <Post key={post.id} post={post} />
+                    <Post key={post.id} post={post} current_user={this.state.current_user}/>
                 ))}
-
+                <Paginator handler={this.paginationHandler} paginator={this.state.paginator} />
             </div>
         );
     }
@@ -460,7 +466,11 @@ class ProfilePage extends Component {
     };
     handleFollow = (data) => fetch(`/api/follow/`, { method: "POST", body: JSON.stringify({ follow: data, user: this.state.user.id }) }).then(this.fetchUser());
     fetchUser = () => fetch(`/api/user/?username=${this.props.match.params.username}`)
-        .then(r => r.json()).then(data => this.setState({ user: data.user, following: data.user.following, followers: data.user.followers, posts: data.posts }));
+        .then(r => r.json()).then(data => this.setState({ user: data.user, following: data.user.following, followers: data.user.followers, posts: data.posts, paginator: data.paginator, }));
+    paginationHandler = (page) => fetch(`/api/posts/?username=${this.props.match.params.username}&page=${page}`)
+        .then(r => r.json())
+        .then(data => this.setState({ posts: data.posts, paginator: data.paginator }));
+
 }
 
 

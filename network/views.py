@@ -8,7 +8,7 @@ from django.db.models.query import QuerySet
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-
+from django.conf import settings
 import json
 from .models import User, Post, Comment
 
@@ -95,7 +95,6 @@ def register(request):
 def post_view(request, pk=None):
     print(request.GET)
     print(request.POST)
-    PAGINATION = 1
     posts : QuerySet[Post] = Post.objects.all().order_by("-created_at")
     following = request.GET.get("following")
     if following is not None: # ? Filter parameter ?following=
@@ -105,7 +104,7 @@ def post_view(request, pk=None):
         posts = posts.filter(user__username=username)
 
     # ! Pagination
-    paginator = Paginator(posts, PAGINATION)
+    paginator = Paginator(posts, settings.PAGINATION)
 
     # ! Put method
     if request.method ==  "PUT" and not request.user.is_anonymous:
@@ -186,15 +185,29 @@ def follow_view(request):
 
 
 @csrf_exempt
-@login_required
+# @login_required
 def user_view(request):
     username = request.GET.get("username")
     if username:
         user :User = User.objects.get(username=username)
         data = {}
         data["user"] = user.serialize()
-        data["posts"] = [post.serialize() for post in user.posts.all().order_by("-created_at")]
+        posts = user.posts.all().order_by("-created_at")
+        paginator = Paginator(posts, settings.PAGINATION)
+        page_number = request.GET.get("page", 1)
+        page_obj = paginator.get_page(page_number)
+        data["posts"] = [post.serialize() for post in page_obj.object_list]
+        data["paginator"] = {
+            "current":page_obj.number,
+            "has_previus":page_obj.has_previous(),
+            "has_next":page_obj.has_next(),
+            "has_other_pages":page_obj.has_other_pages(),
+            "start_index":page_obj.start_index(),
+            "end_index":page_obj.end_index(),
+            "num_pages":page_obj.paginator.num_pages,
+        }
         return JsonResponse(data)
-
+    if not request.user.is_authenticated:
+        return JsonResponse({})
     return JsonResponse({"user":request.user.serialize()})
 
