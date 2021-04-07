@@ -109,14 +109,15 @@ const NewPostForm = (props) => {
             }),
         }).then(r=>r.json()).then(data=>{
             console.log(data)
-            handler(data.post);
             setContent(old=>"");
+            handler(data.post);
         });
         };
 
     return (
         <React.Fragment>
-                 <form className="m-5" onSubmit={e=>submitPost(e)}>
+                <h6 className="m-0 p-0 mb-2">Create a new post</h6>
+                 <form className="mr-5 ml-5" onSubmit={e=>submitPost(e)}>
                      <textarea 
                         value={content}
                         onChange={e=>setContent(old=>e.target.value)}
@@ -367,7 +368,7 @@ class AllPostPage extends Component {
         return (
             <div className="container">
                 <h2 className="m-3">All posts</h2>
-                <NewPostForm  handler={this.newPostHandler}/>
+                {this.state.user && <NewPostForm  handler={this.newPostHandler}/>}
                 {this.state.posts.map((post) => (
                     <Post key={post.id} post={post} current_user={this.state.user} />
                 ))}
@@ -375,7 +376,7 @@ class AllPostPage extends Component {
             </div>
         );
     }
-    newPostHandler = (post)=>this.setState(old =>{posts:[post, ...old.posts]});
+    newPostHandler = (post)=>this.setState(old =>({posts:[post, ...old.posts]}));
     paginationHandler = (page) => fetch(`/api/posts/?page=${page}`)
         .then(r => r.json())
         .then(data => this.setState({ posts: data.posts, paginator: data.paginator }));
