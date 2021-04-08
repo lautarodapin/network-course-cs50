@@ -2,7 +2,19 @@
 {% load static %}
 {% block body %}
 <div id="app">
+  <h1>Hello App!</h1>
+  <p>
+    <router-link :to="{name: 'Home'}">Go to Home</router-link>
+    <router-link :to="{name: 'MainProfile'}">Go to About</router-link>
+    <router-link :to="{name: 'Profile', params:{id: 1}}">Go to About</router-link>
+    <router-link :to="{name: 'Login'}">Go to About</router-link>
+    <router-link :to="{name: 'Logout'}">Go to About</router-link>
+  </p>
+  <router-view></router-view>
 </div>
-<script type="text/babel" src="{% static 'components/app.js' %}">
+<script  src="{% static 'vue/app.js' %}">
+</script>
+<script>
+    const mountedApp = app.mount("#app")
 </script>
 {% endblock %}
