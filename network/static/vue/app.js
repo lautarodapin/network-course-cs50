@@ -34,6 +34,35 @@ const store = createStore({
     },
 })
 
+const LikeComponent = {
+    template: `
+    <button @click="$emit('like', 1)" class="btn btn-success btn-sm ml-2">+1</button>
+    <button @click="$emit('like', -1)" class="btn btn-danger btn-sm ml-2">-1</button>
+    <button type="button" class="btn btn-primary btn-sm ml-2">
+        <span class="badge badge-light">
+            {{likes}}
+        </span>
+    </button>
+    `,
+    props: ["likes",],
+    emits: ["like"],
+}
+const Avatar = {
+    template: `
+    <div className="card-header">
+        {{username}}
+        <span className="text-muted">
+            {{createdAt}}
+        </span>
+        <span v-if="likes != null">
+            <LikeComponent :likes="likes" @like="$emit('like', $event)" />
+        </span>
+    </div>
+    `,
+    components: {LikeComponent,},
+    props:["username", "createdAt", "likes", "like"],
+}
+
 const Paginator = {
     template: `
     <nav aria-label="...">
@@ -110,17 +139,13 @@ const CommentForm = {
 const Comment = {
     template: `
         <div className="card mb-2">
-            <div className="card-header">
-                {{username}}
-                <span className="text-muted">
-                    {{createdAt}}
-                </span>
-            </div>
+            <Avatar :username="username" :createdAt="createdAt" />
             <div className="card-body">
                 {{content}}
             </div>
         </div>
     `,
+    components: {Avatar,},
     props: ["comment",],
     computed:{
         username(){return this.comment.user.username;},
@@ -156,19 +181,7 @@ const Post = {
     template: `
         <div class="card mb-2">
             <div class="card-header">
-                {{username}}
-                <span class="text-muted">
-                    {{createdAt}}
-                </span>
-                <span>
-                    <button @click="like(1)" class="btn btn-success btn-sm ml-2">+1</button>
-                    <button @click="like(-1)" class="btn btn-danger btn-sm ml-2">-1</button>
-                    <button type="button" class="btn btn-primary btn-sm ml-2">
-                        <span class="badge badge-light">
-                            {{likes}}
-                        </span>
-                    </button>
-                </span>
+                <Avatar :username="username" :createdAt="createdAt" :likes="likes" @like="like"/>
             </div>
             <div class="card-body">
                 {{content}}
@@ -180,7 +193,7 @@ const Post = {
         </div>
     `,
     props: ["post"],
-    components: {Comment, CommentForm},
+    components: {Comment, CommentForm, Avatar,},
     computed:{
         content(){return this.post.content;},
         username(){return this.post.user.username;},
