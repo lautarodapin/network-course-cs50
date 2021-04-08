@@ -129,6 +129,7 @@ def post_view(request, pk=None):
     elif request.method == "POST" and request.user.is_authenticated:
         print("POST!!")
         print(request.POST)
+        print(request.body)
         data = json.loads(request.body)
         content = data.get("content")
         post = Post.objects.create(content=content, user=request.user)
@@ -155,6 +156,9 @@ def post_view(request, pk=None):
 def comment_view(request):
     user:User = request.user
     data = json.loads(request.body)
+    print(request.POST)
+    print(request.body)
+    print(data)
     comment = data.get("comment")
     post_id = data.get("post_id")
     if comment and post_id and user:

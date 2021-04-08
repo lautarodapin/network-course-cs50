@@ -2,13 +2,16 @@
 {% load static %}
 {% block body %}
 <div id="app">
-  <h1>Hello App!</h1>
   <p>
-    <router-link :to="{name: 'Home'}">Go to Home</router-link>
+    <router-link :to="{name: 'Home'}">All Posts</router-link>
+    |
     <router-link :to="{name: 'MainProfile'}">Go to About</router-link>
+    |
     <router-link :to="{name: 'Profile', params:{id: 1}}">Go to About</router-link>
-    <router-link :to="{name: 'Login'}">Go to About</router-link>
-    <router-link :to="{name: 'Logout'}">Go to About</router-link>
+    |
+    <a v-if="!isAuth" href="accounts/login/">Login</a>
+    |
+    <a v-if="isAuth" href="accounts/logout/">Logout</a>
   </p>
   <router-view></router-view>
 </div>
