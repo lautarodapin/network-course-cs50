@@ -419,10 +419,10 @@ class FollowingPage extends Component {
         .then(data => this.setState({ posts: data.posts, paginator: data.paginator }));
 
     fetchPosts = (following) => fetch(`/api/posts/?following=${this.state.following.toString() || following.toString}`).then(r => r.json())
-        .then(data => this.setState({ posts: data.posts, paginator: data.paginator }));
+        .then(data => this.setState(old => ({ posts: data.posts, paginator: data.paginator })));
     fetchUser = () => fetch("/api/user/").then(r => r.json())
         .then(data => {
-            this.setState({ user: data.user, following: data.user.following });
+            this.setState(old => ({ user: data.user, following: data.user.following }));
             this.fetchPosts(data.user.following);
         });
 }
