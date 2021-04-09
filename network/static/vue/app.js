@@ -241,7 +241,10 @@ const Post = {
                 <Comment v-for="comment in comments" :key="comment.id" :comment="comment"/>
                 </div>
                 <CommentForm v-if="false" @submitForm="createComment"/>
-                <a v-if="user && 'id' in user && post.user.id == user.id && !editing" @click="editing=true" href="#" class="btn btn-sm btn btn-secondary card-link">Edit</a>
+                <a v-if="user && 'id' in user && post.user.id == user.id && !editing" @click="editing=true;editContent=content" href="#" class="btn btn-sm btn btn-secondary card-link">Edit</a>
+            </div>
+            <div class="card-footer p-0 text-center">
+                <small class="text-muted">{{post.created_at}}</small>
             </div>
         </div>
     `,
@@ -308,10 +311,11 @@ const Home = {
     template:  `
     <div>
         <h4>All posts page!</h4>
+        <h6 v-if="posts.length == 0">
+            No posts created! create a new one
+        </h6>
         <PostForm v-if="isAuth" @submitForm="createPost"></PostForm>
-        <div v-for="post in posts" :key="post.id">
-            <Post :post="post" @editContent="editContent" />
-        </div>
+        <Post v-for="post in posts" :key="post.id" :post="post" @editContent="editContent" />
         <Paginator :paginator="paginator" @switchPage="getAllPosts"/>
     </div>
     `,
@@ -366,6 +370,9 @@ const MainProfile = {
                 </small>
             </span>
         </h3>
+        <h5 v-if="posts.length == 0">
+            No posts created!
+        </h5>
         <Post v-for="post in posts" :post=post :key="post.id" @editContent="editContent"/>
         <Paginator :paginator="paginator" @switchPage="getAllPosts"/>
     </div>
@@ -421,6 +428,9 @@ const Profile = {
                 <button v-if="user && 'id' in user && user.id != profileUser.id && user.following.includes(profileUser.username)" @click="follow(false)" class="btn btn-sm btn-info">UnFollow</button>
             </span>        
         </h4>
+        <h5 v-if="posts.length == 0">
+            No posts created!
+        </h5>
         <Post v-for="post in posts" :key="post.id" :post="post" @editContent="editContent"></Post>
         <Paginator :paginator="paginator" @switchPage="getUserPosts"></Paginator>
     </div>
@@ -471,6 +481,39 @@ const Profile = {
     }
 }
 
+const FollowingPage = {
+    template: `
+        <div class="container-fluid mt-5 pt-2">
+            <h3>Following page</h3>
+            <h6 v-if="posts.length == 0">You don't follow anyone</h6>
+            <Post v-for="post in posts" :key="post.id" :post="post"/>
+            <Paginator :paginator="paginator" @switchPage="getAllPosts" />
+        </div>
+    `,
+    components:{Post, Paginator},
+    data(){return{
+        posts: [],
+        paginator: [],
+    }},
+    methods:{
+        getAllPosts(pageNumber){
+            if (pageNumber == null) pageNumber = 1;
+            axios.get(`/api/posts/?page=${pageNumber}&following=${this.user.following.join(",")}`)
+            .then(response => {
+                console.log(response);
+                this.posts = response.data.posts;
+                this.paginator = response.data.paginator;
+            })
+        }
+    },
+    computed:{
+        user(){return this.$store.getters.user;},
+    },
+    created(){
+        this.$store.dispatch("getUser").then(user => this.getAllPosts())
+    },
+}
+
 const Login = {
     template: `
         <div>
@@ -508,6 +551,7 @@ const routes = [
     { path: '/', name: "Home",component: Home },
     { path: '/profile', name: "MainProfile", component: MainProfile, meta: {requiresAuth: true}},
     { path: '/profile/:id', name: "Profile", component: Profile },
+    { path: '/following', name: "Following", component: FollowingPage },
     { path: '/:pathMatch(.*)', component: NotFound },
 ]
 
