@@ -13,10 +13,10 @@
             <router-link v-if="isAuth" :to="{name: 'MainProfile'}" class="nav-link">Profile</router-link>
           </li>
           <li class="nav-item">
-            <a v-if="!isAuth" href="accounts/login/" class="nav-link">Login</a>
+            <a v-if="!isAuth" href="/accounts/login/" class="nav-link">Login</a>
           </li>
           <li class="nav-item">
-            <a v-if="isAuth" href="accounts/logout/" class="nav-link">Logout</a>
+            <a v-if="isAuth" href="/accounts/logout/" class="nav-link">Logout</a>
           </li>
         </ul>
         <div class="mt-2 mt-md-0">

@@ -88,19 +88,24 @@ const LikeComponent = {
 const Avatar = {
     template: `
     <div className="card-header">
-        <router-link :to="{name: 'Profile', params:{id: id}}" class="nav-link">
+        <router-link :to="{name: 'Profile', params:{id: id}}">
             {{username}}
         </router-link>
-        <span className="text-muted">
-            {{createdAt}}
+        <span className="text-muted ml-4">
+            <small>
+                {{createdAt}}
+            </small>
         </span>
-        <span v-if="likes != null">
+        <span v-if="likes != null && isAuth">
             <LikeComponent :likes="likes" @like="$emit('like', $event)" />
         </span>
     </div>
     `,
     components: {LikeComponent,},
     props:["username", "createdAt", "likes", "like", "id"],
+    computed: {
+        isAuth(){return this.$store.getters.isAuth},
+    }
 }
 
 const Paginator = {
@@ -236,7 +241,7 @@ const Post = {
                 <Comment v-for="comment in comments" :key="comment.id" :comment="comment"/>
                 </div>
                 <CommentForm v-if="false" @submitForm="createComment"/>
-                <a v-if="post.user.id == user.id && !editing" @click="editing=true" href="#" class="btn btn-sm btn btn-secondary card-link">Edit</a>
+                <a v-if="user && 'id' in user && post.user.id == user.id && !editing" @click="editing=true" href="#" class="btn btn-sm btn btn-secondary card-link">Edit</a>
             </div>
         </div>
     `,
@@ -267,7 +272,6 @@ const Post = {
             .then(response => {
                 console.log(response)
                 this.$emit("editContent", {id: this.post.id, content: response.data.content})
-                // this.post.content = response.data.content
                 this.editContent = "";
                 this.editing = false;
             })
@@ -413,8 +417,8 @@ const Profile = {
                 </small>
             </span>
             <span>
-                <button v-if="user.id != profileUser.id && !user.following.includes(profileUser.username)" @click="follow(true)" class="btn btn-sm btn-info">Follow</button>
-                <button v-if="user.id != profileUser.id && user.following.includes(profileUser.username)" @click="follow(false)" class="btn btn-sm btn-info">UnFollow</button>
+                <button v-if="user && 'id' in user && user.id != profileUser.id && !user.following.includes(profileUser.username)" @click="follow(true)" class="btn btn-sm btn-info">Follow</button>
+                <button v-if="user && 'id' in user && user.id != profileUser.id && user.following.includes(profileUser.username)" @click="follow(false)" class="btn btn-sm btn-info">UnFollow</button>
             </span>        
         </h4>
         <Post v-for="post in posts" :key="post.id" :post="post" @editContent="editContent"></Post>
@@ -502,7 +506,7 @@ const app = createApp({
 
 const routes = [
     { path: '/', name: "Home",component: Home },
-    { path: '/profile', name: "MainProfile", component: MainProfile },
+    { path: '/profile', name: "MainProfile", component: MainProfile, meta: {requiresAuth: true}},
     { path: '/profile/:id', name: "Profile", component: Profile },
     { path: '/:pathMatch(.*)', component: NotFound },
 ]
@@ -511,7 +515,10 @@ const router = createRouter({
     history: createWebHistory(),
     routes, // short for `routes: routes`
 })
-
+router.beforeEach((to, from, next) => {
+    if (to.name == "MainProfile" && !store.getters.isAuth) next({name:"Home"})
+    else next()
+})
 
 app.use(store)
 app.use(router);
