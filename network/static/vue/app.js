@@ -1,27 +1,38 @@
 const { createApp } = Vue;
 const { createStore } = Vuex;
-const { createRouter, createWebHashHistory } = VueRouter;
+const { createRouter, createWebHistory } = VueRouter;
 const store = createStore({
     state(){
         return {
             user: {},
+            posts:[],
+            paginator:{},
         }
     },
     getters: {
         user: (state) => state.user,
         isAuth: (state) => state.user?state.user.is_authenticated:false,
+        posts: (state) => state.posts,
+        filteredPosts: (state) => (username) => state.posts.filter(post => post.user.username == username)
     },
     mutations: {
         login(state, user){
+            console.log(user)
             state.user = user
         },
         logout(state){
             state.user = {}
-        }
+        },
+        setPosts(state, posts){
+            state.posts = posts;
+        },
+        setPaginator(state, paginator){
+            state.paginator = paginator;
+        },
     },
     actions: {
         login({context, commit}){
-            axios.get("/api/user/")
+            return axios.get("/api/user/")
             .then(response => {
                 console.log(response)
                 commit("login", response.data.user)
@@ -31,6 +42,33 @@ const store = createStore({
         logout({context, commit}){
             commit("logout")
         },
+        getUser({commit}){
+            return axios.get(`/api/user/`)
+                .then(response => {
+                    console.log(response)
+                    commit("login", response.data.user)
+                    return response.data.user
+                })
+                .catch(error=>console.log(error))
+        },
+        getAllPosts({commit}, pageNumber){
+            return axios.get(`/api/posts/?page=${pageNumber}`)
+            .then(response => {
+                console.log(response)
+                commit("setPosts", response.data.posts)
+                commit("setPaginator", response.data.paginator)
+            })
+            .catch(error => console.log(error))
+        },
+        getAllFilteredPosts({commit}, pageNumber, username){
+            return axios.get(`/api/posts/?page=${pageNumber}&username=${username}`)
+            .then(response => {
+                console.log(response)
+                commit("setPosts", response.data.posts)
+                commit("setPaginator", response.data.paginator)
+            })
+            .catch(error => console.log(error))
+        }
     },
 })
 
@@ -50,7 +88,9 @@ const LikeComponent = {
 const Avatar = {
     template: `
     <div className="card-header">
-        {{username}}
+        <router-link :to="{name: 'Profile', params:{id: id}}" class="nav-link">
+            {{username}}
+        </router-link>
         <span className="text-muted">
             {{createdAt}}
         </span>
@@ -60,7 +100,7 @@ const Avatar = {
     </div>
     `,
     components: {LikeComponent,},
-    props:["username", "createdAt", "likes", "like"],
+    props:["username", "createdAt", "likes", "like", "id"],
 }
 
 const Paginator = {
@@ -139,7 +179,7 @@ const CommentForm = {
 const Comment = {
     template: `
         <div className="card mb-2">
-            <Avatar :username="username" :createdAt="createdAt" />
+            <Avatar :username="username" :createdAt="createdAt" :id="userId" />
             <div className="card-body">
                 {{content}}
             </div>
@@ -149,6 +189,7 @@ const Comment = {
     props: ["comment",],
     computed:{
         username(){return this.comment.user.username;},
+        userId(){return this.comment.user.id;},
         createdAt(){return this.comment.humanize_created_at;},
         content(){return this.comment.comment;},
     },
@@ -179,29 +220,62 @@ const PostForm = {
 }
 const Post = {
     template: `
+        
         <div class="card mb-2">
-            <div class="card-header">
-                <Avatar :username="username" :createdAt="createdAt" :likes="likes" @like="like"/>
-            </div>
+            <Avatar :username="username" :createdAt="createdAt" :id="userId" :likes="likes" @like="like"/>
             <div class="card-body">
-                {{content}}
-                <div class="container">
-                    <Comment v-for="comment in comments" :key="comment.id" :comment="comment"/>
+                <p v-if="!editing" class="card-text">
+                    {{content}}
+                </p>
+                <form @submit.prevent="editPost" v-else>
+                    <textarea v-model="editContent" :placeholder="content" class="form-control mb-2"></textarea>
+                    <input type="submit" value="Save" class="btn btn-sm btn-success mr-2" />
+                    <button @click="editing=false" class="btn btn-sm btn-danger mr-2" type="button">Cancel</button>
+                </form>
+                <div v-if="false" class="container">
+                <Comment v-for="comment in comments" :key="comment.id" :comment="comment"/>
                 </div>
-                <CommentForm @submitForm="createComment"/>
+                <CommentForm v-if="false" @submitForm="createComment"/>
+                {{post}}
+                <br/>
+                {{user}}
+                <a v-if="post.user.id == user.id && !editing" @click="editing=true" href="#" class="btn btn-sm btn btn-secondary card-link">Edit</a>
             </div>
         </div>
     `,
     props: ["post"],
+    emits: ["editContent"],
     components: {Comment, CommentForm, Avatar,},
+    data(){return{
+        editing: false,
+        editContent: "",
+    }},
     computed:{
         content(){return this.post.content;},
         username(){return this.post.user.username;},
+        userId(){return this.post.user.id;},
+        user(){return this.post.user;},
         createdAt(){return this.post.humanize_created_at},
         comments(){return this.post.comments},
         likes(){return this.post.likes},
     },
     methods:{
+        editPost(){
+            const data = {
+                post_id: this.post.id,
+                like: this.post.like,
+                content: this.editContent
+            }
+            axios.put("/api/posts/", data)
+            .then(response => {
+                console.log(response)
+                this.$emit("editContent", {id: this.post.id, content: response.data.content})
+                // this.post.content = response.data.content
+                this.editContent = "";
+                this.editing = false;
+            })
+            .catch(error => console.log(error))
+        },
         createComment(comment){
             const data = {
                 comment: comment,
@@ -235,7 +309,7 @@ const Home = {
         <h4>All posts page!</h4>
         <PostForm v-if="isAuth" @submitForm="createPost"></PostForm>
         <div v-for="post in posts" :key="post.id">
-            <Post :post="post" />
+            <Post :post="post" @editContent="editContent" />
         </div>
         <Paginator :paginator="paginator" @switchPage="getAllPosts"/>
     </div>
@@ -251,6 +325,11 @@ const Home = {
         isAuth(){return this.$store.getters.isAuth;},
     },
     methods:{
+        editContent({id, content}){
+            var index = this.posts.findIndex(post=>post.id == id)
+            console.log("Edigin content", id, content, index)
+            this.posts[index].content = content
+        },
         createPost(content){
             axios.post(`/api/posts/`, content)
             .then(response => {
@@ -274,20 +353,111 @@ const Home = {
     }
 }
 const MainProfile = { 
-    template: 
-    `
-    <div>Profile</div>
-    ` 
+    template: `
+    <div>
+        <h3>
+            {{user.username}} profile page
+            <span class="text-muted">
+                <small>
+                    Followers {{user.followers.length}}
+                    // 
+                    Following {{user.following.length}}
+                </small>
+            </span>
+        </h3>
+        <Post v-for="post in posts" :post=post :key="post.id" @editContent="editContent"/>
+        <Paginator :paginator="paginator" @switchPage="getAllPosts"/>
+    </div>
+    `,
+    components:{Post, Paginator},
+    data(){return{
+        posts: [],
+        paginator: {},
+    }},
+    computed:{
+        user(){return this.$store.state.user;},
+    },
+    // async beforeRouteEnter(to, from, next){},
+    // async beforeRouteUpdate(to, from, next){},
+    methods:{
+        editContent({id, content}){
+            var index = this.posts.findIndex(post=>post.id == id)
+            console.log("Edigin content", id, content, index)
+            this.posts[index].content = content
+        },
+        getAllPosts(pageNumber, user){
+            if (pageNumber == null) pageNumber = 1;
+            axios.get(`/api/posts/?page=${pageNumber}&username=${this.user? this.user.username : user.username}`)
+            .then(response => {
+                console.log(response);
+                this.posts = response.data.posts;
+                this.paginator = response.data.paginator;
+            })
+        }
+    },
+    mounted(){
+        this.$store.dispatch("getUser").then(user=>this.getAllPosts(1, user))
+        // this.$store.dispatch("getAllFilteredPosts")
+    },
+
 }
 const Profile = { 
     template: 
     `
-    <div>Profile {{id}}</div>
+    <div v-if="profileUser != null">
+        <h4>
+            Profile {{profileUser.username}}
+            <span>
+                <button v-if="user.id != profileUser.id && !user.following.includes(profileUser.username)" @click="follow(true)" class="btn btn-lg btn-secondary">Follow</button>
+                <button v-if="user.id != profileUser.id && user.following.includes(profileUser.username)" @click="follow(false)" class="btn btn-lg btn-secondary">UnFollow</button>
+            </span>        
+        </h4>
+        <Post v-for="post in posts" :key="post.id" :post="post" @editContent="editContent"></Post>
+        <Paginator :paginator="paginator" @switchPage="getUserPosts"></Paginator>
+    </div>
     `,
+    components: {Post, Paginator},
+    data(){return{
+        posts: [],
+        paginator: {},
+        profileUser: null,
+    }},
     computed: {
         id(){ return this.$route.params.id},
+        isAuth(){ return this.$store.getters.isAuth;},
+        user(){return this.$store.getters.user},
+    },
+    methods:{
+        editContent({id, content}){
+            var index = this.posts.findIndex(post=>post.id == id)
+            console.log("Edigin content", id, content, index)
+            this.posts[index].content = content
+        },
+        follow(value){
+            const data = {
+                user: this.profileUser.id,
+                follow: value
+            }
+            axios.post(`/api/follow/`, data)
+            .then(response => {
+                console.log(response)
+                this.$store.dispatch("getUser")
+            })
+            .catch(error => console.log(error))
+        },
+        getUserPosts(pageNumber = 1){
+            axios.get(`/api/user/?page=${pageNumber}&user_id=${this.id}`)
+            .then(response => {
+                console.log(response)
+                this.posts = response.data.posts;
+                this.paginator = response.data.paginator;
+                this.profileUser = response.data.user;
+            })
+        }
+    },
+    created(){
+        this.getUserPosts();
     }
-
 }
 
 const Login = {
@@ -331,7 +501,7 @@ const routes = [
 ]
 
 const router = createRouter({
-    history: createWebHashHistory(),
+    history: createWebHistory(),
     routes, // short for `routes: routes`
 })
 
