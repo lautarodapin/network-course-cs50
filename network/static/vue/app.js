@@ -110,7 +110,7 @@ const Avatar = {
 
 const Paginator = {
     template: `
-    <nav aria-label="...">
+    <nav aria-label="..." class="d-flex justify-content-center">
         <ul class="pagination">
             <li class="page-item" :class="paginator.has_previus?'':'disabled'">
                 <a @click="$emit('switchPage', 1)" href="#" class="page-link">First</a>
@@ -309,14 +309,14 @@ const Post = {
 
 const Home = {
     template:  `
-    <div>
+    <div class="d-flex flex-column">
         <h4>All posts page!</h4>
         <h6 v-if="posts.length == 0">
             No posts created! create a new one
         </h6>
         <PostForm v-if="isAuth" @submitForm="createPost"></PostForm>
         <Post v-for="post in posts" :key="post.id" :post="post" @editContent="editContent" />
-        <Paginator :paginator="paginator" @switchPage="getAllPosts"/>
+        <Paginator :paginator="paginator" @switchPage="getAllPosts" class="d-flex justify-content-center"/>
     </div>
     `,
     components: {Paginator, PostForm, Post},
