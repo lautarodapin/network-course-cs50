@@ -129,6 +129,7 @@ def post_view(request, pk=None):
     elif request.method == "POST" and request.user.is_authenticated:
         print("POST!!")
         print(request.POST)
+        print(request.body)
         data = json.loads(request.body)
         content = data.get("content")
         post = Post.objects.create(content=content, user=request.user)
@@ -155,6 +156,9 @@ def post_view(request, pk=None):
 def comment_view(request):
     user:User = request.user
     data = json.loads(request.body)
+    print(request.POST)
+    print(request.body)
+    print(data)
     comment = data.get("comment")
     post_id = data.get("post_id")
     if comment and post_id and user:
@@ -168,6 +172,8 @@ def comment_view(request):
 def follow_view(request):
     if request.method == "POST" and request.user.is_authenticated:
         data = json.loads(request.body)
+        print(request.body)
+        print(data)
         user_id = data.get("user")
         follow = data.get("follow")
         if user_id is not None and follow is not None:
@@ -180,16 +186,21 @@ def follow_view(request):
                 user.following.remove(user_id)
             user.save()
             return JsonResponse({"message":"Success"}, status=200)
-        return JsonResponse({"message":"Missing user_id or follow"}, status=400)
+        return JsonResponse({"message":"Missing user or follow"}, status=400)
     return JsonResponse({"message":"error"}, status=400)
 
 
 @csrf_exempt
 # @login_required
 def user_view(request):
+    print(request.GET)
     username = request.GET.get("username")
-    if username:
-        user :User = User.objects.get(username=username)
+    user_id = request.GET.get("user_id")
+    if username or user_id:
+        if username:
+            user :User = User.objects.get(username=username)
+        elif user_id:
+            user :User = User.objects.get(pk=user_id)
         data = {}
         data["user"] = user.serialize()
         posts = user.posts.all().order_by("-created_at")

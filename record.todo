@@ -1,0 +1,17 @@
+All posts:
+    ✔ Pagination max 10 posts! 00:00 @done(21-04-09 17:35)
+    ✔ Mostrar pagina all posts 00:10 @done(21-04-09 17:35)
+    ✔ Crear nuevo post 00:16 00:16 @done(21-04-09 17:35)
+    ✔ Mostrar que el post incluye nombre de usuario, fecha, tiempo y likes 00:40 @done(21-04-09 17:35)
+    ✔ Editar post 00:55 @done(21-04-09 17:35)
+    ✔ Likes 01:10 @done(21-04-09 17:35)
+    ✔ No se puede editar posts de otros 01:42 @done(21-04-09 17:37)
+Perfil:
+    ✔ Mostrar posts del perfil actual en orden descendente 01:20 @done(21-04-09 17:36)
+    ✔ Mostrar la cantidad de usuarios que siguen y lo siguen. 1:25 @done(21-04-09 17:36)
+    ✔ Pagination 1:30 @done(21-04-09 17:36)
+Perfil de otro:
+    ✔ Mostrar posts del perfil del otro en orden descendente 01:50 @done(21-04-09 17:38)
+    ✔ Mostrar la cantidad de usuarios que siguen y lo siguen 01:55 @done(21-04-09 17:38)
+Following:
+    ✔ 02:10 @done(21-04-09 17:38)

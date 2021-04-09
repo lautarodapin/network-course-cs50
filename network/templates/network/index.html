@@ -2,7 +2,12 @@
 {% load static %}
 {% block body %}
 <div id="app">
+  {% include 'network/navbar.html' %}
+  <router-view style="margin-top: 100px"></router-view>
 </div>
-<script type="text/babel" src="{% static 'components/app.js' %}">
+<script  src="{% static 'vue/app.js' %}">
+</script>
+<script>
+    const mountedApp = app.mount("#app")
 </script>
 {% endblock %}
