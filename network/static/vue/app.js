@@ -236,9 +236,6 @@ const Post = {
                 <Comment v-for="comment in comments" :key="comment.id" :comment="comment"/>
                 </div>
                 <CommentForm v-if="false" @submitForm="createComment"/>
-                {{post}}
-                <br/>
-                {{user}}
                 <a v-if="post.user.id == user.id && !editing" @click="editing=true" href="#" class="btn btn-sm btn btn-secondary card-link">Edit</a>
             </div>
         </div>
@@ -254,7 +251,7 @@ const Post = {
         content(){return this.post.content;},
         username(){return this.post.user.username;},
         userId(){return this.post.user.id;},
-        user(){return this.post.user;},
+        user(){return this.$store.getters.user;},
         createdAt(){return this.post.humanize_created_at},
         comments(){return this.post.comments},
         likes(){return this.post.likes},
@@ -407,9 +404,17 @@ const Profile = {
     <div v-if="profileUser != null">
         <h4>
             Profile {{profileUser.username}}
+            <span class="text-muted m-2">
+                <small>
+                    Followers 
+                    {{profileUser.followers.length}}
+                    // 
+                    Following {{profileUser.following.length}}
+                </small>
+            </span>
             <span>
-                <button v-if="user.id != profileUser.id && !user.following.includes(profileUser.username)" @click="follow(true)" class="btn btn-lg btn-secondary">Follow</button>
-                <button v-if="user.id != profileUser.id && user.following.includes(profileUser.username)" @click="follow(false)" class="btn btn-lg btn-secondary">UnFollow</button>
+                <button v-if="user.id != profileUser.id && !user.following.includes(profileUser.username)" @click="follow(true)" class="btn btn-sm btn-info">Follow</button>
+                <button v-if="user.id != profileUser.id && user.following.includes(profileUser.username)" @click="follow(false)" class="btn btn-sm btn-info">UnFollow</button>
             </span>        
         </h4>
         <Post v-for="post in posts" :key="post.id" :post="post" @editContent="editContent"></Post>
@@ -442,6 +447,8 @@ const Profile = {
             .then(response => {
                 console.log(response)
                 this.$store.dispatch("getUser")
+                if(value) this.profileUser.followers.push(this.user.username);
+                else this.profileUser.followers = this.profileUser.followers.filter(u => u != this.user.username);
             })
             .catch(error => console.log(error))
         },
